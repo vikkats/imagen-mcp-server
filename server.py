@@ -7,8 +7,8 @@ import base64
 mcp = FastMCP("OpenRouterImagenServer")
 
 @mcp.tool()
-def generate_image(prompt: str) -> Image:
-    """Generates an image from a text prompt using OpenRouter."""
+def generate_image(prompt: str, face_url_1: str = "", face_url_2: str = "") -> Image:
+    """Generates an image from a text prompt using OpenRouter. Can accept up to two direct image URLs for character face consistency."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise Exception("OPENROUTER_API_KEY is not set")
@@ -18,10 +18,19 @@ def generate_image(prompt: str) -> Image:
         "Content-Type": "application/json"
     }
     
-    # Hitting the specific Nano Banana 2 / Gemini Flash Image model
+    # 1. Build the multimodal content array starting with Ares's text prompt
+    content_array = [{"type": "text", "text": prompt}]
+    
+    # 2. If Ares provides the URLs, attach them as actual visual inputs!
+    if face_url_1:
+        content_array.append({"type": "image_url", "image_url": {"url": face_url_1}})
+    if face_url_2:
+        content_array.append({"type": "image_url", "image_url": {"url": face_url_2}})
+    
+    # 3. Send the fully constructed multimodal payload
     payload = {
         "model": "google/gemini-3.1-flash-image-preview",
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [{"role": "user", "content": content_array}],
         "modalities": ["image"]
     }
     
