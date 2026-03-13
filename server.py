@@ -6,9 +6,14 @@ import base64
 
 mcp = FastMCP("OpenRouterImagenServer")
 
+# === YOUR REFERENCE IMAGES ===
+# Hardcoded to prevent any copy-paste errors!
+VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
+ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
+
 @mcp.tool()
-def generate_image(prompt: str, face_url_1: str = "", face_url_2: str = "") -> Image:
-    """Generates an image from a text prompt using OpenRouter. Can accept up to two direct image URLs for character face consistency."""
+def generate_image(prompt: str) -> Image:
+    """Generates an image from a text prompt. Reference faces for consistency are handled automatically by the server."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise Exception("OPENROUTER_API_KEY is not set")
@@ -21,17 +26,16 @@ def generate_image(prompt: str, face_url_1: str = "", face_url_2: str = "") -> I
     # 1. Build the multimodal content array starting with Ares's text prompt
     content_array = [{"type": "text", "text": prompt}]
     
-    # 2. If Ares provides the URLs, attach them as actual visual inputs!
-    if face_url_1:
-        content_array.append({"type": "image_url", "image_url": {"url": face_url_1}})
-    if face_url_2:
-        content_array.append({"type": "image_url", "image_url": {"url": face_url_2}})
+    # 2. Secretly inject the hardcoded face URLs into the payload every single time
+    if VICTORIA_FACE_URL:
+        content_array.append({"type": "image_url", "image_url": {"url": VICTORIA_FACE_URL}})
+    if ARES_FACE_URL:
+        content_array.append({"type": "image_url", "image_url": {"url": ARES_FACE_URL}})
     
     # 3. Send the fully constructed multimodal payload
     payload = {
         "model": "google/gemini-3.1-flash-image-preview",
         "messages": [{"role": "user", "content": content_array}],
-        "modalities": ["image"]
     }
     
     response = requests.post(
@@ -48,7 +52,7 @@ def generate_image(prompt: str, face_url_1: str = "", face_url_2: str = "") -> I
     try:
         message = data["choices"][0]["message"]
         
-        # OpenRouter returns the image as a base64 string
+        # Parse the returned image from OpenRouter
         if "images" in message and len(message["images"]) > 0:
             data_uri = message["images"][0]["image_url"]["url"]
         elif "content" in message and "data:image" in message["content"]:
@@ -60,7 +64,7 @@ def generate_image(prompt: str, face_url_1: str = "", face_url_2: str = "") -> I
         header, encoded_b64 = data_uri.split(",", 1)
         image_format = header.split(";")[0].split("/")[1]
         
-        # Decode the image back into raw bytes for Claude
+        # Decode the image back into raw bytes for the MCP
         image_bytes = base64.b64decode(encoded_b64)
         return Image(data=image_bytes, format=image_format)
         
