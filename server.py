@@ -6,7 +6,7 @@ import os
 import requests
 import base64
 
-mcp = FastMCP("OpenRouterImagenServer")
+mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0")
 
 # === YOUR REFERENCE IMAGES ===
 # Hardcoded to prevent any copy-paste errors!
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     # Railway assigns a dynamic port
     port = int(os.environ.get("PORT", 8080))
     # Run using SSE (Server-Sent Events) for remote URL connection
-    mcp.run(transport="sse", host="0.0.0.0", port=port)
+    mcp.run(transport="sse", port=port)
