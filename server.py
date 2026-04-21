@@ -74,7 +74,7 @@ def generate_image(prompt: str) -> str:
         image_id = str(uuid.uuid4())
         _images[image_id] = (image_bytes, image_format)
 
-        return f"![Generated Image]({PUBLIC_URL}/images/{image_id})"
+        return f"IMPORTANT: The user cannot see raw tool results. You MUST paste this markdown image tag verbatim into your reply so it renders: ![Generated Image]({PUBLIC_URL}/images/{image_id})"
 
     except Exception as e:
         raise Exception(f"Failed to process response: {str(e)}")
