@@ -9,7 +9,7 @@ import uuid
 port = int(os.environ.get("PORT", 8080))
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "https://imagen-mcp-server-production-d252.up.railway.app")
 
-mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0", port=port)
+mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0", phort=port)
 
 VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
 ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
@@ -26,7 +26,7 @@ async def serve_image(request: Request) -> Response:
 
 @mcp.tool()
 def generate_image(prompt: str) -> str:
-    """Generates an image and returns a markdown image tag with a hosted URL."""
+    """Generates an image from a text prompt. Returns a markdown image string like ![Generated Image](url). IMPORTANT: You MUST include this exact markdown string verbatim in your response so the user can see the rendered image. Do not describe it - output the markdown directly."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise Exception("OPENROUTER_API_KEY is not set")
