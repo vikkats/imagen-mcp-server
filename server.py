@@ -72,4 +72,4 @@ def generate_image(prompt: str) -> Image:
         raise Exception(f"Failed to process OpenRouter response: {str(e)}")
 
 if __name__ == "__main__":
-    mcp.run(transport="sse")
+    mcp.run(transport="streamable-http")
