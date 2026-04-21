@@ -1,5 +1,7 @@
-from mcp.server.fastmcp import FastMCP
-from fastmcp.utilities.types import Image
+from mcp.server.fastmcp import FastMCP, Image
+import os
+import requests
+import base64
 import os
 import requests
 import base64
