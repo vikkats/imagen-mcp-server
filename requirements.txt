@@ -1,2 +1,4 @@
-fastmcp
+mcp
 requests
+uvicorn
+starlette
