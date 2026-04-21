@@ -9,7 +9,7 @@ import uuid
 port = int(os.environ.get("PORT", 8080))
 PUBLIC_URL = os.environ.get("PUBLIC_URL", "https://imagen-mcp-server-production-d252.up.railway.app")
 
-mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0", phort=port)
+mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0", port=port)
 
 VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
 ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
