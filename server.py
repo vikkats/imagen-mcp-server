@@ -1,12 +1,12 @@
 import os
 
-# 🚨 CRITICAL FIX: Set these BEFORE importing FastMCP so it sees them!
+# Set these BEFORE importing FastMCP so it sees them!
 os.environ["FASTMCP_HOST"] = "0.0.0.0"
 os.environ["FASTMCP_PORT"] = os.environ.get("PORT", "8080")
 
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image
-import requests
+import httpx  # <-- We swapped 'requests' for 'httpx'
 import base64
 
 mcp = FastMCP("OpenRouterImagenServer")
@@ -16,7 +16,7 @@ VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
 ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
 
 @mcp.tool()
-def generate_image(prompt: str) -> Image:
+async def generate_image(prompt: str) -> Image:  # <-- Added 'async'
     """Generates an image from a text prompt using OpenRouter. Uses baked-in direct image URLs for character face consistency."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
@@ -41,11 +41,13 @@ def generate_image(prompt: str) -> Image:
         "modalities": ["image"]
     }
     
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json=payload
-    )
+    # <-- Using async httpx with a generous 60-second timeout so it never gives up!
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            "https://openrouter.ai/api/v1/chat/completions",
+            headers=headers,
+            json=payload
+        )
     
     if response.status_code != 200:
         raise Exception(f"OpenRouter API error: {response.text}")
@@ -75,5 +77,4 @@ def generate_image(prompt: str) -> Image:
         raise Exception(f"Failed to process OpenRouter response: {str(e)}")
 
 if __name__ == "__main__":
-    # Run using SSE (Server-Sent Events) - brackets stay clean!
     mcp.run(transport="sse")
