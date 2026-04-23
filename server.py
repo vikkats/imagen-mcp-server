@@ -1,12 +1,13 @@
+import os
+
+# 🚨 CRITICAL FIX: Set these BEFORE importing FastMCP so it sees them!
+os.environ["FASTMCP_HOST"] = "0.0.0.0"
+os.environ["FASTMCP_PORT"] = os.environ.get("PORT", "8080")
+
 from fastmcp import FastMCP
 from fastmcp.utilities.types import Image
-import os
 import requests
 import base64
-
-# FastMCP's new update requires host/port to be set as environment variables before initialization
-os.environ["FASTMCP_HOST"] = "0.0.0.0"
-os.environ["FASTMCP_PORT"] = str(os.environ.get("PORT", "8080"))
 
 mcp = FastMCP("OpenRouterImagenServer")
 
