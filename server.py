@@ -4,9 +4,11 @@ import os
 import requests
 import base64
 
-# Grab the port from Railway and set the host here at initialization!
-port = int(os.environ.get("PORT", 8080))
-mcp = FastMCP("OpenRouterImagenServer", host="0.0.0.0", port=port)
+# FastMCP's new update requires host/port to be set as environment variables before initialization
+os.environ["FASTMCP_HOST"] = "0.0.0.0"
+os.environ["FASTMCP_PORT"] = str(os.environ.get("PORT", "8080"))
+
+mcp = FastMCP("OpenRouterImagenServer")
 
 # Hardcoded direct links
 VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
@@ -72,5 +74,5 @@ def generate_image(prompt: str) -> Image:
         raise Exception(f"Failed to process OpenRouter response: {str(e)}")
 
 if __name__ == "__main__":
-    # Run using SSE (Server-Sent Events) - no host/port needed here anymore!
+    # Run using SSE (Server-Sent Events) - brackets stay clean!
     mcp.run(transport="sse")
