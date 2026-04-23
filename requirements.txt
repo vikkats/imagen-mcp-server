@@ -1,4 +1,4 @@
-mcp
+fastmcp
 requests
 uvicorn
 starlette
