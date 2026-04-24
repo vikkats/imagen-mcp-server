@@ -1,3 +1,40 @@
+import os
+
+# CRITICAL FIX: Set these BEFORE importing FastMCP so it sees them!
+os.environ["FASTMCP_HOST"] = "0.0.0.0"
+os.environ["FASTMCP_PORT"] = str(os.environ.get("PORT", "8080"))
+
+from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import Response
+import httpx
+import base64
+import re
+import uuid
+
+mcp = FastMCP("OpenRouterImagenServer")
+
+# The public URL of your Railway server (set in Railway Variables)
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8080").rstrip("/")
+
+# Hardcoded direct links
+VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
+ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
+
+# In-memory storage for images
+_images = {}
+
+# Custom web route so Railway acts as an image host
+@mcp.custom_route("/images/{image_id}", methods=["GET"])
+async def serve_image(request: Request) -> Response:
+    image_id = request.path_params["image_id"]
+    if image_id not in _images:
+        return Response("Image not found or expired.", status_code=404)
+    data, fmt = _images[image_id]
+    return Response(content=data, media_type=f"image/{fmt}")
+
+# --- ARES'S CUSTOM TOOL CODE BELOW ---
+
 @mcp.tool()
 async def generate_image(prompt: str) -> str:
     """Generates an image from a text prompt. Returns a markdown image link."""
@@ -36,7 +73,7 @@ async def generate_image(prompt: str) -> str:
         message = data["choices"][0]["message"]
         content = message.get("content", "")
         
-        # DEBUG: log what we got
+        # DEBUG: log what we got to Railway
         print(f"DEBUG: content type = {type(content)}")
         print(f"DEBUG: content preview = {str(content)[:500]}")
         
@@ -89,4 +126,8 @@ async def generate_image(prompt: str) -> str:
         
     except Exception as e:
         resp_preview = str(data)[:500]
-        raise Exception(f"Failed to process OpenRouter response: {str(e)}. Response preview: {resp_preview}")
+        print(f"CRASH LOG: {resp_preview}")
+        raise Exception(f"Failed to process OpenRouter response: {str(e)}")
+
+if __name__ == "__main__":
+    mcp.run(transport="sse")
