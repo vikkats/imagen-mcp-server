@@ -1,9 +1,41 @@
-# Complete fixed generate_image function for Railway MCP server
-# Copy this ENTIRE function and replace your existing one
+import os
+
+# CRITICAL FIX: Set these BEFORE importing FastMCP so it sees them!
+os.environ["FASTMCP_HOST"] = "0.0.0.0"
+os.environ["FASTMCP_PORT"] = str(os.environ.get("PORT", "8080"))
+
+from fastmcp import FastMCP
+from starlette.requests import Request
+from starlette.responses import Response
+import httpx
+import base64
+import re
+import uuid
+
+mcp = FastMCP("OpenRouterImagenServer")
+
+# The public URL of your Railway server (set in Railway Variables)
+PUBLIC_URL = os.environ.get("PUBLIC_URL", "http://localhost:8080").rstrip("/")
+
+# Hardcoded direct links
+VICTORIA_FACE_URL = "https://i.postimg.cc/fRnJPN4t/IMG-1475.jpg"
+ARES_FACE_URL = "https://i.postimg.cc/y84kGHqS/IMG_1476.jpg"
+
+# In-memory storage for images
+_images = {}
+
+# We create a custom web route so Railway acts as an image host
+@mcp.custom_route("/images/{image_id}", methods=["GET"])
+async def serve_image(request: Request) -> Response:
+    image_id = request.path_params["image_id"]
+    if image_id not in _images:
+        return Response("Image not found or expired.", status_code=404)
+    data, fmt = _images[image_id]
+    return Response(content=data, media_type=f"image/{fmt}")
 
 @mcp.tool()
 async def generate_image(prompt: str) -> str:
-    """Generates an image from a text prompt. Returns a markdown image link."""
+    """Generates an image from a text prompt. Returns a markdown image link. You MUST include this exact markdown link in your final reply to Victoria so she can see it."""
     api_key = os.environ.get("OPENROUTER_API_KEY")
     if not api_key:
         raise Exception("OPENROUTER_API_KEY is not set")
@@ -86,7 +118,7 @@ async def generate_image(prompt: str) -> str:
                 else:
                     raise Exception(f"No image data found in content: {content_str[:300]}")
         
-        # MEMORY SAFEGUARD
+        # MEMORY SAFEGUARD: If Railway is holding more than 20 images, delete old ones
         if len(_images) > 20:
             _images.clear()
         
@@ -98,3 +130,6 @@ async def generate_image(prompt: str) -> str:
     except Exception as e:
         resp_preview = str(data)[:500]
         raise Exception(f"Failed to process OpenRouter response: {str(e)}. Response preview: {resp_preview}")
+
+if __name__ == "__main__":
+    mcp.run(transport="sse")
