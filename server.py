@@ -1,3 +1,6 @@
+# Complete fixed generate_image function for Railway MCP server
+# Copy this ENTIRE function and replace your existing one
+
 @mcp.tool()
 async def generate_image(prompt: str) -> str:
     """Generates an image from a text prompt. Returns a markdown image link."""
@@ -34,18 +37,18 @@ async def generate_image(prompt: str) -> str:
     
     try:
         message = data["choices"][0]["message"]
-        
-        # DEBUG: log full message structure
         print(f"DEBUG: message keys = {list(message.keys())}")
         
         # NEW: Check message.images first (OpenRouter format)
         images = message.get("images", [])
         if images and len(images) > 0:
             img_data = images[0]
-            # Handle both formats: {image_url: {url: "data:..."}} and {url: "data:..."}
-            img_url = img_data.get("image_url", {}).get("url", "") if isinstance(img_data, dict) else ""
-            if not img_url and isinstance(img_data, dict):
-                img_url = img_data.get("url", "")
+            if isinstance(img_data, dict):
+                img_url = img_data.get("image_url", {}).get("url", "")
+                if not img_url:
+                    img_url = img_data.get("url", "")
+            else:
+                img_url = str(img_data)
             
             if img_url.startswith("data:image"):
                 match = re.search(r"data:image/([^;]+);base64,([a-zA-Z0-9+/=]+)", img_url)
@@ -57,7 +60,7 @@ async def generate_image(prompt: str) -> str:
             else:
                 raise Exception(f"Unexpected image URL format: {img_url[:100]}")
         
-        # FALLBACK: Check message.content (old format or text-only)
+        # FALLBACK: Check message.content
         else:
             content = message.get("content", "")
             print(f"DEBUG: content type = {type(content)}, value = {content}")
@@ -65,14 +68,12 @@ async def generate_image(prompt: str) -> str:
             if not content:
                 raise Exception("No images array and no content in response")
             
-            # Try to find base64 in content string
             content_str = str(content)
             match = re.search(r"data:image/([^;]+);base64,([a-zA-Z0-9+/=]+)", content_str)
             if match:
                 image_format = match.group(1)
                 image_bytes = base64.b64decode(match.group(2))
             else:
-                # Try raw base64
                 b64_match = re.search(r"([a-zA-Z0-9+/=]{1000,})", content_str)
                 if b64_match:
                     image_bytes = base64.b64decode(b64_match.group(1))
@@ -93,6 +94,7 @@ async def generate_image(prompt: str) -> str:
         _images[image_id] = (image_bytes, image_format)
         
         return f"![Generated Image]({PUBLIC_URL}/images/{image_id})"
-        except Exception as e:
+        
+    except Exception as e:
         resp_preview = str(data)[:500]
         raise Exception(f"Failed to process OpenRouter response: {str(e)}. Response preview: {resp_preview}")
